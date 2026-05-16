@@ -260,6 +260,12 @@ export function SubscriptionDashboard() {
     return sameYear ? expense.amount : 0;
   };
 
+  const getSubscriptionsOrderedByDate = () => {
+    if (!data) return [];
+    const now = new Date();
+    return data.subscriptions.sort((a, b) => new Date(a.nextBillingDate).getTime() - new Date(b.nextBillingDate).getTime());
+  };
+
   useEffect(() => {
     async function fetchOverview() {
       setLoading(true);
@@ -428,6 +434,72 @@ export function SubscriptionDashboard() {
             </SimpleTable>
 
             <SimpleTable
+              title="Scadenze entro 30 giorni"
+              titleHref="/abbonamenti/scadenze"
+              headerClass="bg-orange-50 text-orange-800"
+            >
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr>
+                    <th className="px-4 py-2">Data scadenza</th>
+                    <th className="px-4 py-2">Cliente</th>
+                    <th className="px-4 py-2">Servizio</th>
+                    <th className="px-4 py-2">Prezzo</th>
+                    <th className="px-4 py-2">Stato</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const now = new Date();
+                    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+                    return getSubscriptionsOrderedByDate()
+                      .filter((subscription) => {
+                        const nextBillingDate = new Date(subscription.nextBillingDate);
+                        return nextBillingDate <= thirtyDaysFromNow;
+                      })
+                      .map((subscription) => {
+                        const nextBillingDate = new Date(subscription.nextBillingDate);
+                        const daysUntilBilling = Math.floor(
+                          (nextBillingDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+                        );
+                        let dateRowClass = "";
+                        if (daysUntilBilling < 0) {
+                          dateRowClass = "bg-red-50 text-red-700 font-semibold";
+                        } else if (daysUntilBilling <= 7) {
+                          dateRowClass = "bg-orange-100 text-orange-700 font-semibold";
+                        } else if (daysUntilBilling <= 30) {
+                          dateRowClass = "bg-yellow-50 text-yellow-700";
+                        }
+                        return (
+                          <tr key={subscription.id} className="border-t border-zinc-200">
+                            <td className={`px-4 py-2 ${dateRowClass}`}>
+                              {nextBillingDate.toLocaleDateString("it-IT")}
+                              {daysUntilBilling !== undefined && (
+                                <>
+                                  <br />
+                                  <span className="text-xs">
+                                    {daysUntilBilling < 0
+                                      ? `Scaduto da ${Math.abs(daysUntilBilling)} giorni`
+                                      : daysUntilBilling === 0
+                                        ? "Oggi"
+                                        : `Tra ${daysUntilBilling} giorni`}
+                                  </span>
+                                </>
+                              )}
+                            </td>
+                            <td className="px-4 py-2">{subscription.customer.name}</td>
+                            <td className="px-4 py-2">{subscription.plan.name}</td>
+                            <td className="px-4 py-2">{currencyFormatter.format(getPricePerCycle(subscription))}</td>
+                            <td className="px-4 py-2">{statusLabels[subscription.status]}</td>
+                          </tr>
+                        );
+                      });
+                  })()}
+                </tbody>
+              </table>
+            </SimpleTable>
+
+            <SimpleTable
               title="Automazioni"
               titleHref="/automazione/configurazione"
               headerClass="bg-emerald-50 text-emerald-800"
@@ -484,87 +556,6 @@ export function SubscriptionDashboard() {
                 </tbody>
               </table>
             </SimpleTable>
-
-            {(() => {
-              const activeSubscriptions = data.subscriptions.filter(
-                (subscription) => subscription.status === "ACTIVE",
-              );
-
-              const annualClientCost = activeSubscriptions.reduce(
-                (total, subscription) => total + getAnnualTotal(subscription),
-                0,
-              );
-
-              const annualSupplierCost = activeSubscriptions.reduce(
-                (total, subscription) => total + getProviderCostPerCycle(subscription),
-                0,
-              );
-
-              const annualGenericCost = data.expenses.reduce(
-                (total, expense) => total + getExpenseAnnualImpact(expense),
-                0,
-              );
-
-              const monthlyClientCost = annualClientCost / 12;
-              const monthlySupplierCost = annualSupplierCost / 12;
-              const monthlyGenericCost = annualGenericCost / 12;
-              const monthlyCost = monthlySupplierCost + monthlyGenericCost;
-              const annualCost = annualSupplierCost + annualGenericCost;
-              const annualProfit = annualClientCost - annualCost;
-              const averageMarkup = annualCost > 0
-                ? ((annualClientCost - annualCost) / annualCost) * 100
-                : null;
-
-              return (
-                <section className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
-                  <div className="flex items-center justify-between gap-3 border-b border-zinc-200 bg-zinc-50 px-4 py-3">
-                    <h2 className="text-lg font-semibold text-zinc-800">Calcolo economico</h2>
-                    <Link
-                      href="/analisi-economica"
-                      className="rounded-md border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-white"
-                    >
-                      Vedi dettaglio analitico
-                    </Link>
-                  </div>
-                  <div className="divide-y divide-zinc-200 text-sm">
-                    <div className="grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-[1fr_auto] md:items-center">
-                      <p className="text-zinc-700">Costo fornitori mensile (da abbonamenti)</p>
-                      <p className="font-semibold text-zinc-900">{currencyFormatter.format(monthlySupplierCost)}</p>
-                    </div>
-                    <div className="grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-[1fr_auto] md:items-center">
-                      <p className="text-zinc-700">Costi generici mensili equivalenti</p>
-                      <p className="font-semibold text-zinc-900">{currencyFormatter.format(monthlyGenericCost)}</p>
-                    </div>
-                    <div className="grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-[1fr_auto] md:items-center">
-                      <p className="text-zinc-700">Costo mensile</p>
-                      <p className="font-semibold text-zinc-900">{currencyFormatter.format(monthlyCost)}</p>
-                    </div>
-                    <div className="grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-[1fr_auto] md:items-center">
-                      <p className="text-zinc-700">Costo annuale</p>
-                      <p className="font-semibold text-zinc-900">{currencyFormatter.format(annualCost)}</p>
-                    </div>
-                    <div className="grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-[1fr_auto] md:items-center">
-                      <p className="text-zinc-700">Costo al cliente mensile</p>
-                      <p className="font-semibold text-zinc-900">{currencyFormatter.format(monthlyClientCost)}</p>
-                    </div>
-                    <div className="grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-[1fr_auto] md:items-center">
-                      <p className="text-zinc-700">Costo al cliente annuale</p>
-                      <p className="font-semibold text-zinc-900">{currencyFormatter.format(annualClientCost)}</p>
-                    </div>
-                    <div className="grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-[1fr_auto] md:items-center">
-                      <p className="text-zinc-700">Guadagno annuale stimato</p>
-                      <p className="font-semibold text-zinc-900">{currencyFormatter.format(annualProfit)}</p>
-                    </div>
-                    <div className="grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-[1fr_auto] md:items-center">
-                      <p className="text-zinc-700">Ricarico medio</p>
-                      <p className="font-semibold text-zinc-900">
-                        {averageMarkup !== null ? `${averageMarkup.toFixed(1)}%` : "-"}
-                      </p>
-                    </div>
-                  </div>
-                </section>
-              );
-            })()}
           </>
         )}
       </div>
