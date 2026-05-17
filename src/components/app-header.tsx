@@ -48,6 +48,7 @@ const menu: MenuGroup[] = [
     label: "Abbonamenti",
     items: [
       { label: "Gestione", href: "/abbonamenti/modifica" },
+      { label: "Scadenze", href: "/abbonamenti/scadenze" },
     ],
   },
   {

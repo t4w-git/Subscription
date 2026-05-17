@@ -127,7 +127,7 @@ export default function ScadenzeAbbonamentiPage() {
               ← Torna agli abbonamenti
             </Link>
           </div>
-          <p className="text-sm text-zinc-600">Lista completa di tutte le scadenze ordinate per data</p>
+          <p className="text-sm text-zinc-600">Lista di tutte le scadenze dell'anno in corso ordinate per data (passate e future)</p>
         </header>
 
         {error && (
@@ -156,7 +156,13 @@ export default function ScadenzeAbbonamentiPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {subscriptionsOrderedByDate.map((subscription) => {
+                  {subscriptionsOrderedByDate
+                    .filter((subscription) => {
+                      const nextBillingDate = new Date(subscription.nextBillingDate);
+                      const currentYear = new Date().getFullYear();
+                      return nextBillingDate.getFullYear() === currentYear;
+                    })
+                    .map((subscription) => {
                     const now = new Date();
                     const nextBillingDate = new Date(subscription.nextBillingDate);
                     const daysUntilBilling = Math.floor(

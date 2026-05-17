@@ -455,7 +455,10 @@ export function SubscriptionDashboard() {
                     return getSubscriptionsOrderedByDate()
                       .filter((subscription) => {
                         const nextBillingDate = new Date(subscription.nextBillingDate);
-                        return nextBillingDate <= thirtyDaysFromNow;
+                        const daysUntilBilling = Math.floor(
+                          (nextBillingDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+                        );
+                        return nextBillingDate <= thirtyDaysFromNow && daysUntilBilling >= 0;
                       })
                       .map((subscription) => {
                         const nextBillingDate = new Date(subscription.nextBillingDate);
