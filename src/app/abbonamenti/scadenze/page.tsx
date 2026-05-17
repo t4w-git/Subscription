@@ -69,6 +69,7 @@ export default function ScadenzeAbbonamentiPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const currencyFormatter = useMemo(
     () =>
@@ -111,8 +112,13 @@ export default function ScadenzeAbbonamentiPage() {
 
   const subscriptionsOrderedByDate = useMemo(() => {
     if (!subscriptions) return [];
-    return subscriptions.sort((a, b) => new Date(a.nextBillingDate).getTime() - new Date(b.nextBillingDate).getTime());
-  }, [subscriptions]);
+    const sorted = [...subscriptions].sort((a, b) => {
+      const timeA = new Date(a.nextBillingDate).getTime();
+      const timeB = new Date(b.nextBillingDate).getTime();
+      return sortDirection === "asc" ? timeA - timeB : timeB - timeA;
+    });
+    return sorted;
+  }, [subscriptions, sortDirection]);
 
   return (
     <main className="min-h-screen bg-white p-6 text-zinc-900 md:p-10">
@@ -140,8 +146,14 @@ export default function ScadenzeAbbonamentiPage() {
 
         {!loading && !error && (
           <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white">
-            <div className="border-b border-zinc-200 bg-orange-50 px-4 py-3">
+            <div className="flex items-center justify-between border-b border-zinc-200 bg-orange-50 px-4 py-3">
               <h2 className="text-lg font-semibold text-orange-800">Scadenze per data</h2>
+              <button
+                onClick={() => setSortDirection(sortDirection === "asc" ? "desc" : "asc")}
+                className="rounded-md border border-orange-300 bg-white px-3 py-1 text-sm font-medium text-orange-700 hover:bg-orange-100 transition"
+              >
+                {sortDirection === "asc" ? "📅 Crescente" : "📅 Decrescente"}
+              </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
