@@ -313,42 +313,6 @@ export function SubscriptionDashboard() {
               <MetricCard title="Fatture aperte" value={String(data.metrics.pendingInvoices)} />
             </section>
 
-            <section className="grid gap-4 md:grid-cols-4">
-              <MetricCard title="Progetti totali" value={String(data.metrics.totalProjects)} />
-              <MetricCard title="Progetti attivi" value={String(data.metrics.activeProjects)} />
-              <MetricCard title="Deadline entro 14 giorni" value={String(data.metrics.projectDeadlinesSoon)} />
-              <MetricCard title="Progetti in ritardo" value={String(data.metrics.projectOverdue)} />
-            </section>
-
-            <SimpleTable title="Progetti" titleHref="/progetti" headerClass="bg-indigo-50 text-indigo-800">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr>
-                    <th className="px-4 py-2">Progetto</th>
-                    <th className="px-4 py-2">Cliente</th>
-                    <th className="px-4 py-2">Deadline</th>
-                    <th className="px-4 py-2">Stato</th>
-                    <th className="px-4 py-2">Avanzamento</th>
-                    <th className="px-4 py-2">Milestone</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.projects.map((project) => (
-                    <tr key={project.id} className="border-t border-zinc-200">
-                      <td className="px-4 py-2">{project.name}</td>
-                      <td className="px-4 py-2">{project.customer?.name || "-"}</td>
-                      <td className="px-4 py-2">
-                        {project.deadline ? new Date(project.deadline).toLocaleDateString("it-IT") : "-"}
-                      </td>
-                      <td className="px-4 py-2">{projectStatusLabels[project.status]}</td>
-                      <td className="px-4 py-2">{project.progress}%</td>
-                      <td className="px-4 py-2">{project.milestones.length}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </SimpleTable>
-
             <SimpleTable title="Clienti" titleHref="/clienti" headerClass="bg-sky-50 text-sky-800">
               <table className="w-full text-left text-sm">
                 <thead>
